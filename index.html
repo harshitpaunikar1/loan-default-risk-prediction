@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lending Into the Unknown: A Credit-Risk Decision System for NPA Reduction</title>
+  <meta name="description" content="How a classification model built on the Home Credit dataset becomes a scoreband-driven approval policy — and why the model's value only becomes legible once it's embedded in a lending decision chain.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Barlow+Condensed:wght@500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:       #111111;
+      --ink-mid:   #222222;
+      --ink-body:  #333333;
+      --ink-light: #555555;
+      --ink-muted: #888888;
+      --rule:      #ddd;
+      --divider:   #e8e8e8;
+      --bg:        #ffffff;
+      --bg-tint:   #f0f0f0;
+      --display:   'Barlow Condensed', sans-serif;
+      --body:      'Barlow', sans-serif;
+      --mono:      'Space Mono', monospace;
+    }
+
+    html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+    body { background: var(--bg); color: var(--ink); font-family: var(--body); }
+
+    /* ── CREDIT MEMO HEADER ── */
+    .memo-header {
+      border-bottom: 3px solid var(--ink);
+      padding: 2.5rem 3.5rem 2rem;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 3rem;
+      align-items: start;
+    }
+    .memo-type {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      margin-bottom: 0.9rem;
+    }
+    .memo-header h1 {
+      font-family: var(--display);
+      font-size: clamp(1.8rem, 3.8vw, 3rem);
+      font-weight: 700;
+      line-height: 1.1;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      color: var(--ink);
+      max-width: 640px;
+    }
+    .memo-deck {
+      font-family: var(--body);
+      font-weight: 300;
+      font-size: 1.05rem;
+      color: var(--ink-light);
+      margin-top: 0.9rem;
+      max-width: 580px;
+      line-height: 1.65;
+    }
+    /* metric sidebar in header */
+    .memo-metrics {
+      border-left: 2px solid var(--ink);
+      padding-left: 1.5rem;
+      min-width: 180px;
+    }
+    .metric-row {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--divider);
+    }
+    .metric-row:last-child { border-bottom: none; }
+    .metric-label {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+    }
+    .metric-val {
+      font-family: var(--mono);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--ink);
+      display: block;
+      margin-top: 0.1rem;
+    }
+
+    /* ── BODY ── */
+    .article-body {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2.5rem 3.5rem 5rem;
+    }
+    @media (max-width: 700px) {
+      .memo-header { grid-template-columns: 1fr; padding: 2rem 1.5rem; }
+      .memo-metrics { border-left: none; border-top: 2px solid var(--ink); padding-left: 0; padding-top: 1rem; margin-top: 1rem; }
+      .article-body { padding: 2rem 1.5rem; }
+    }
+
+    /* section divider style: h2 looks like underwriting tab */
+    h2 {
+      font-family: var(--display);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--ink);
+      border-top: 2px solid var(--ink);
+      border-bottom: 1px solid var(--divider);
+      padding: 0.6rem 0;
+      margin-top: 3.2rem;
+      margin-bottom: 1.4rem;
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+    }
+    h2 .tab-num {
+      font-size: 0.6rem;
+      color: var(--ink-muted);
+      letter-spacing: 0.1em;
+      flex-shrink: 0;
+    }
+    h3 {
+      font-family: var(--display);
+      font-size: 1.1rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--ink);
+      margin: 1.8rem 0 0.6rem;
+    }
+
+    p { font-size: 1rem; line-height: 1.82; color: var(--ink-body); margin-bottom: 1.2rem; }
+    p strong { color: var(--ink); }
+    ul, ol { padding-left: 1.4rem; color: var(--ink-body); margin-bottom: 1.2rem; }
+    li { font-size: 1rem; line-height: 1.75; margin-bottom: 0.45rem; }
+    li strong { color: var(--ink); }
+
+    figure { margin: 2.5rem 0 1rem; }
+    figcaption {
+      font-size: 0.77rem;
+      font-family: var(--body);
+      font-style: italic;
+      color: var(--ink-muted);
+      margin-top: 0.65rem;
+      line-height: 1.55;
+    }
+    .diagram-scroll { overflow-x: auto; }
+
+    /* callout box */
+    .callout {
+      border: 1px solid var(--ink);
+      padding: 1rem 1.2rem;
+      margin: 1.8rem 0;
+      background: var(--bg-tint);
+    }
+    .callout-label {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      margin-bottom: 0.5rem;
+    }
+    .callout p { margin-bottom: 0; font-size: 0.95rem; }
+
+    /* code */
+    pre {
+      background: #111;
+      color: #f5f5f5;
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      padding: 1.2rem 1.5rem;
+      margin: 1.5rem 0;
+      overflow-x: auto;
+      line-height: 1.72;
+    }
+    code { font-family: var(--mono); background: var(--bg-tint); padding: 0.1em 0.35em; font-size: 0.88rem; }
+
+    /* scoreband table */
+    .score-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--body);
+      font-size: 0.85rem;
+      margin: 2rem 0 0.5rem;
+    }
+    .score-table th {
+      text-align: left;
+      font-family: var(--mono);
+      font-size: 0.63rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      border-bottom: 2px solid var(--ink);
+      padding: 0.5rem 0.8rem;
+      color: var(--ink);
+    }
+    .score-table td {
+      padding: 0.55rem 0.8rem;
+      border-bottom: 1px solid var(--divider);
+      color: var(--ink-body);
+      vertical-align: top;
+    }
+    .score-table tr:last-child td { border-bottom: none; }
+    .score-table .band { font-family: var(--mono); font-weight: 700; color: var(--ink); font-size: 0.88rem; }
+    .score-table .action-approve { font-weight: 600; color: var(--ink); }
+    .score-table .action-review { color: var(--ink-light); font-style: italic; }
+    .score-table .action-reject { color: var(--ink-muted); }
+
+    .end-rule {
+      border-top: 2px solid var(--ink);
+      margin-top: 4rem;
+      padding-top: 1.2rem;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--ink-muted);
+      line-height: 1.8;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════ CREDIT MEMO HEADER ═══════════ -->
+<div class="memo-header">
+  <div>
+    <p class="memo-type">Credit Risk &nbsp;·&nbsp; Decision System Analysis &nbsp;·&nbsp; NPA Reduction</p>
+    <h1>Lending Into the Unknown:<br>A Credit-Risk Decision System</h1>
+    <p class="memo-deck">The hard part of consumer lending is not the population you already understand — it is the applicants who have no credit history and whose risk you have to estimate from everything except their repayment record. A classification model is only useful here if it connects to an approval policy.</p>
+  </div>
+  <div class="memo-metrics">
+    <div class="metric-row">
+      <span class="metric-label">Dataset</span>
+      <span class="metric-val">307,511</span>
+      applications
+    </div>
+    <div class="metric-row">
+      <span class="metric-label">Default Rate</span>
+      <span class="metric-val">~8.1%</span>
+      class imbalance
+    </div>
+    <div class="metric-row">
+      <span class="metric-label">Target Metric</span>
+      <span class="metric-val">AUC / KS</span>
+    </div>
+    <div class="metric-row">
+      <span class="metric-label">Decision Output</span>
+      <span class="metric-val">4 Bands</span>
+      approve → reject
+    </div>
+    <div class="metric-row">
+      <span class="metric-label">Domain</span>
+      <span class="metric-val">Consumer</span>
+      credit / NBFC
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ ARTICLE ═══════════ -->
+<div class="article-body">
+
+  <h2><span class="tab-num">§ 01</span>The Lending Dilemma</h2>
+
+  <p>Consumer lenders — banks, NBFCs, digital credit platforms — face a version of the same problem every day: an applicant arrives with a credit request, and the lender has to decide whether to approve, reprice, or decline before they know how that person will actually behave. If the lender approves and the borrower defaults, the lender absorbs a loss. If the lender declines and the borrower would have repaid, the lender has forfeited revenue and the applicant has been denied a service. Both mistakes have real costs; neither is avoidable at scale; the question is which type of error the lender can afford more of at a given moment in its credit cycle.</p>
+
+  <p>The Home Credit dataset makes this dilemma concrete. The applicants in this dataset are specifically the "thin file" population — people with insufficient or non-existent formal credit history who are underserved by traditional bureau-based scoring. They apply for consumer loans and the lender has to decide using alternative data: income, employment type, asset ownership, family size, loan purpose, contract type, and the applicant's prior behavior in the lender's own system (if any). The dataset is large enough — 307,511 applications — to build a statistically credible model, but the 8.1 percent default rate means the model has to work against class imbalance: for every defaulter, there are approximately eleven non-defaulters who will complicate the decision boundary.</p>
+
+  <p>The business objective, stated plainly in the repository brief, is to identify patterns that predict repayment difficulty so the lender can take action: deny, reduce loan amount, or adjust interest rate upward. What that brief does not spell out is the policy structure through which those actions should happen — and without that structure, a model is a prediction engine disconnected from a lending book.</p>
+
+  <h2><span class="tab-num">§ 02</span>Data and Feature Logic</h2>
+
+  <h3>Application Table: The Primary Signal Set</h3>
+  <p>The <code>application_data.csv</code> file contains one row per application with 122 features. That is more features than most EDA exercises need, and it is more than most models can use without feature selection. The features split into roughly four interpretive categories.</p>
+
+  <p><strong>Demographic and household features</strong> — age, gender, family status, number of children, housing situation — are the weakest direct predictors but serve as important interaction partners with income and employment type. A 35-year-old married applicant with stable employment means something different from an otherwise identical applicant who is unemployed; the demographic features don't predict default alone but help the model understand context.</p>
+
+  <p><strong>Income and employment features</strong> — income amount, income type (working, commercial associate, pensioner, state servant), employment length — are the most direct indicators of repayment capacity. Income amount is particularly important but requires normalization against loan amount: a ₹30,000 income for a ₹100,000 loan is a different risk profile from the same income against a ₹20,000 loan. The debt-to-income ratio constructed from these two fields outperforms either raw feature independently.</p>
+
+  <p><strong>Asset and stability features</strong> — car ownership, real estate ownership, document submission completeness — are proxy signals for financial stability and behavioral reliability. Applicants who own assets are, on average, more stable; applicants who submit all required documents without prompting tend to have lower default rates, possibly because document completion correlates with financial organization and engagement.</p>
+
+  <p><strong>Bureau-external query features</strong> — the AMT_REQ_CREDIT_BUREAU_* columns tracking how many times the applicant was queried at various bureaus in the recent past — are high-signal features that the notebook correctly identifies as important. Multiple recent credit inquiries suggest that the applicant is shopping for credit, possibly because previous requests were rejected or because they are in a period of financial stress. However, zero entries dominate these columns, which limits their statistical contribution unless the model handles zero-inflation appropriately.</p>
+
+  <h3>Previous Application Table: The Behavioral Dimension</h3>
+  <p>The <code>previous_application.csv</code> file links prior credit applications and outcomes for each current applicant. This is the feature source most likely to improve model discrimination, because it contains actual behavioral evidence — not proxy signals — about how this specific person has behaved with credit in the past. Applicants with approved previous loans who completed repayment are categorically different from applicants whose previous loan was refused or cancelled.</p>
+
+  <p>Engineering features from the previous application table requires aggregation: each applicant may have multiple prior applications, so the table needs to be rolled up to one row per applicant with features like "number of previous refused applications," "maximum previous loan amount," and "most recent previous outcome." This joins to the primary application table on the applicant ID. The feature engineering step here is where the most credit-risk-specific domain knowledge shows up in the code.</p>
+
+  <div class="callout">
+    <div class="callout-label">Data Discipline Note</div>
+    <p>The 122-feature application table contains columns with up to 65 percent missing values. Dropping rows with any missing value would destroy most of the dataset. The notebook handles this through column-level decisions: columns above a missing-value threshold (50 percent is a common cutoff) are dropped entirely; below that threshold, missing values are imputed with median (continuous) or mode (categorical). The specific threshold matters — imputing at 65 percent missingness introduces substantial noise. The notebook's choice to drop columns above approximately 50 percent is defensible.</p>
+  </div>
+
+  <h2><span class="tab-num">§ 03</span>Validation and What the Metrics Actually Mean</h2>
+
+  <p>Two metrics dominate the evaluation of credit scoring models: AUC-ROC and the Kolmogorov-Smirnov statistic. Both measure rank-ordering ability — how well the model separates defaulters from non-defaulters — but they measure slightly different aspects of that separation and neither is a substitute for the other.</p>
+
+  <h3>AUC-ROC: The Rank Discrimination Summary</h3>
+  <p>The Area Under the Receiver Operating Characteristic curve measures the probability that the model gives a randomly selected defaulter a higher risk score than a randomly selected non-defaulter. An AUC of 0.5 is chance; AUC of 1.0 is perfect separation; in consumer credit, an AUC between 0.70 and 0.80 is considered acceptable for a thin-file population without bureau scores, and above 0.80 is considered good.</p>
+
+  <p>The ROC curve itself plots the true positive rate (sensitivity — the fraction of defaulters correctly flagged) against the false positive rate (1 − specificity — the fraction of non-defaulters incorrectly flagged) as the decision threshold varies. Moving along the curve from right to left corresponds to raising the score threshold for labeling an application as risky: the model becomes more selective, catches fewer defaulters, but also incorrectly flags fewer good borrowers. The operating point on this curve is a business decision, not a statistical one — it depends on how the lender weighs lost revenue from declined good borrowers against credit losses from approved defaulters.</p>
+
+  <h3>KS Statistic: The Maximum Separation</h3>
+  <p>The Kolmogorov-Smirnov statistic is the maximum vertical distance between the cumulative distribution function of scores for defaulters and the CDF for non-defaulters. In plain language: if you rank all applicants by risk score from highest to lowest, the KS statistic measures how cleanly the defaulters cluster at the top of that ranking before the non-defaulters appear. A KS of 0 means the distributions are identical; a KS of 1 means perfect separation. In practice, consumer credit models for thin-file populations target KS values in the 30-50 percent range.</p>
+
+  <p>KS is particularly useful for scoreband construction because it identifies the score range where discrimination is sharpest — the sweet spot for the approve/review boundary. A model with high AUC but low KS has broad discriminating power but no single score threshold that cleanly separates risk tiers; a model with lower AUC but higher KS may be more useful for policy because the clean separation zone is well-defined even if overall rank ordering is imperfect.</p>
+
+  <!-- DIAGRAM 1 & 2: Approval ladder + AUC/KS decoder -->
+  <figure>
+    <div class="diagram-scroll">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 500" width="820" style="max-width:100%;display:block;">
+        <rect width="820" height="500" fill="#fff"/>
+
+        <!-- ─── MAIN APPROVAL LADDER (left 560px) ─── -->
+        <text x="30" y="22" font-family="Space Mono,monospace" font-size="9" fill="#888" letter-spacing="1.5">FIG. 1A — CREDIT APPROVAL LADDER: APPLICATION → SCOREBAND → DECISION</text>
+
+        <!-- Top box: Application Intake -->
+        <rect x="30" y="40" width="500" height="44" fill="#111"/>
+        <text x="280" y="58" font-family="Barlow Condensed,sans-serif" font-size="13" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="2">APPLICATION INTAKE</text>
+        <text x="280" y="75" font-family="Space Mono,monospace" font-size="8.5" fill="#aaa" text-anchor="middle">307,511 applications · Demographics + Income + Assets + Bureau queries</text>
+
+        <!-- Arrow down -->
+        <line x1="280" y1="84" x2="280" y2="108" stroke="#111" stroke-width="2"/>
+        <polygon points="275,108 285,108 280,118" fill="#111"/>
+
+        <!-- Scoreband 1: Approve (low risk, score > 750) -->
+        <rect x="30" y="118" width="500" height="54" fill="#111"/>
+        <rect x="30" y="118" width="6" height="54" fill="#fff" opacity="0.3"/>
+        <text x="55" y="140" font-family="Space Mono,monospace" font-size="9" font-weight="700" fill="#fff">BAND A · SCORE &gt; 750</text>
+        <text x="55" y="155" font-family="Barlow,sans-serif" font-size="10" fill="#ccc">Estimated default rate: &lt;2% · Expected loss: LOW</text>
+        <text x="55" y="167" font-family="Barlow,sans-serif" font-size="10" fill="#ccc">DTI &lt;35% · Stable employment &gt;2yr · Asset ownership</text>
+        <text x="490" y="148" font-family="Barlow Condensed,sans-serif" font-size="13" font-weight="700" fill="#fff" text-anchor="end" letter-spacing="1">APPROVE</text>
+        <text x="490" y="162" font-family="Space Mono,monospace" font-size="8" fill="#aaa" text-anchor="end">Full amount · Standard rate</text>
+
+        <line x1="280" y1="172" x2="280" y2="192" stroke="#111" stroke-width="2"/>
+        <polygon points="275,192 285,192 280,202" fill="#111"/>
+
+        <!-- Scoreband 2: Reprice (medium-low risk, score 600–750) -->
+        <rect x="30" y="202" width="500" height="54" fill="#333"/>
+        <rect x="30" y="202" width="6" height="54" fill="#fff" opacity="0.2"/>
+        <text x="55" y="224" font-family="Space Mono,monospace" font-size="9" font-weight="700" fill="#fff">BAND B · SCORE 600–750</text>
+        <text x="55" y="239" font-family="Barlow,sans-serif" font-size="10" fill="#bbb">Estimated default rate: 4–8% · Expected loss: MODERATE</text>
+        <text x="55" y="251" font-family="Barlow,sans-serif" font-size="10" fill="#bbb">Some income volatility; acceptable DTI; limited prior defaults</text>
+        <text x="490" y="232" font-family="Barlow Condensed,sans-serif" font-size="13" font-weight="700" fill="#fff" text-anchor="end" letter-spacing="1">REPRICE</text>
+        <text x="490" y="246" font-family="Space Mono,monospace" font-size="8" fill="#aaa" text-anchor="end">+150–300 bps · Reduced max</text>
+
+        <line x1="280" y1="256" x2="280" y2="276" stroke="#111" stroke-width="2"/>
+        <polygon points="275,276 285,276 280,286" fill="#111"/>
+
+        <!-- Scoreband 3: Manual Review (medium-high risk, score 400–600) -->
+        <rect x="30" y="286" width="500" height="54" fill="#555"/>
+        <rect x="30" y="286" width="6" height="54" fill="#fff" opacity="0.2"/>
+        <text x="55" y="308" font-family="Space Mono,monospace" font-size="9" font-weight="700" fill="#fff">BAND C · SCORE 400–600</text>
+        <text x="55" y="323" font-family="Barlow,sans-serif" font-size="10" fill="#ccc">Default rate: 12–20% · Expected loss: HIGH</text>
+        <text x="55" y="335" font-family="Barlow,sans-serif" font-size="10" fill="#ccc">Multiple bureau queries · Employment gaps · High DTI signals</text>
+        <text x="490" y="316" font-family="Barlow Condensed,sans-serif" font-size="13" font-weight="700" fill="#fff" text-anchor="end" letter-spacing="1">MANUAL REVIEW</text>
+        <text x="490" y="330" font-family="Space Mono,monospace" font-size="8" fill="#aaa" text-anchor="end">Underwriter judgment; docs req'd</text>
+
+        <line x1="280" y1="340" x2="280" y2="360" stroke="#111" stroke-width="2"/>
+        <polygon points="275,360 285,360 280,370" fill="#111"/>
+
+        <!-- Scoreband 4: Reject (high risk, score < 400) -->
+        <rect x="30" y="370" width="500" height="54" fill="#888"/>
+        <rect x="30" y="370" width="6" height="54" fill="#111" opacity="0.25"/>
+        <text x="55" y="392" font-family="Space Mono,monospace" font-size="9" font-weight="700" fill="#111">BAND D · SCORE &lt; 400</text>
+        <text x="55" y="407" font-family="Barlow,sans-serif" font-size="10" fill="#222">Default rate: &gt;25% · Expected loss: VERY HIGH</text>
+        <text x="55" y="419" font-family="Barlow,sans-serif" font-size="10" fill="#222">Prior defaults; severe income-debt mismatch; incomplete docs</text>
+        <text x="490" y="400" font-family="Barlow Condensed,sans-serif" font-size="13" font-weight="700" fill="#111" text-anchor="end" letter-spacing="1">DECLINE</text>
+        <text x="490" y="414" font-family="Space Mono,monospace" font-size="8" fill="#333" text-anchor="end">Policy decline; reason code issued</text>
+
+        <!-- Collections posture note at bottom -->
+        <text x="30" y="448" font-family="Space Mono,monospace" font-size="8.5" fill="#888">↳ Collections posture flows from band: Band A → standard reminder cycle · Band B → early flag at 30DPD · Band C → pre-emptive collections outreach</text>
+        <text x="30" y="462" font-family="Space Mono,monospace" font-size="8.5" fill="#888">   Band D applications that are manually reviewed and approved → enhanced monitoring from day 1</text>
+
+        <!-- ─── AUC/KS DECODER (right panel) ─── -->
+        <text x="590" y="22" font-family="Space Mono,monospace" font-size="9" fill="#888" letter-spacing="1">FIG. 1B — AUC &amp; KS</text>
+
+        <!-- AUC diagram: simplified ROC curve -->
+        <text x="590" y="42" font-family="Space Mono,monospace" font-size="8.5" fill="#555">ROC CURVE</text>
+        <!-- axes -->
+        <line x1="600" y1="180" x2="780" y2="180" stroke="#111" stroke-width="1.5"/>
+        <line x1="600" y1="60" x2="600" y2="180" stroke="#111" stroke-width="1.5"/>
+        <!-- random line -->
+        <line x1="600" y1="180" x2="780" y2="60" stroke="#ccc" stroke-width="1" stroke-dasharray="4,3"/>
+        <!-- model curve (approximate AUC ~0.75) -->
+        <path d="M600,180 Q640,130 680,100 Q720,78 780,60" fill="none" stroke="#111" stroke-width="2.5"/>
+        <!-- fill under curve -->
+        <path d="M600,180 Q640,130 680,100 Q720,78 780,60 L780,180 Z" fill="#111" opacity="0.08"/>
+        <!-- AUC label -->
+        <text x="700" y="150" font-family="Space Mono,monospace" font-size="9" fill="#111">AUC</text>
+        <text x="700" y="163" font-family="Space Mono,monospace" font-size="14" font-weight="700" fill="#111">~0.75</text>
+        <!-- axis labels -->
+        <text x="668" y="195" font-family="Space Mono,monospace" font-size="8.5" fill="#888">FPR →</text>
+        <text x="583" y="122" font-family="Space Mono,monospace" font-size="8.5" fill="#888" transform="rotate(-90 583 122)">TPR</text>
+
+        <!-- KS diagram: CDF separation -->
+        <text x="590" y="225" font-family="Space Mono,monospace" font-size="8.5" fill="#555">KS STATISTIC</text>
+        <!-- x axis -->
+        <line x1="600" y1="380" x2="780" y2="380" stroke="#111" stroke-width="1.5"/>
+        <!-- CDF of good borrowers -->
+        <path d="M600,370 Q640,340 700,310 Q740,295 780,280" fill="none" stroke="#888" stroke-width="2"/>
+        <!-- CDF of defaulters (steeper - they cluster at high scores) -->
+        <path d="M600,378 Q620,350 660,310 Q700,280 780,280" fill="none" stroke="#111" stroke-width="2"/>
+        <!-- KS arrow showing max gap -->
+        <line x1="670" y1="298" x2="670" y2="328" stroke="#111" stroke-width="1.5" stroke-dasharray="3,2"/>
+        <text x="675" y="315" font-family="Space Mono,monospace" font-size="9" fill="#111">KS</text>
+        <text x="675" y="328" font-family="Space Mono,monospace" font-size="11" font-weight="700" fill="#111">~40%</text>
+        <!-- legend -->
+        <line x1="600" y1="400" x2="625" y2="400" stroke="#111" stroke-width="2"/>
+        <text x="630" y="403" font-family="Space Mono,monospace" font-size="8.5" fill="#555">Defaulters</text>
+        <line x1="600" y1="415" x2="625" y2="415" stroke="#888" stroke-width="2"/>
+        <text x="630" y="418" font-family="Space Mono,monospace" font-size="8.5" fill="#888">Non-defaulters</text>
+        <text x="600" y="440" font-family="Space Mono,monospace" font-size="8.5" fill="#aaa">Score →</text>
+
+        <!-- Good target annotation -->
+        <rect x="590" y="460" width="190" height="30" fill="#f0f0f0" stroke="#ddd"/>
+        <text x="685" y="473" font-family="Space Mono,monospace" font-size="8.5" fill="#555" text-anchor="middle">Target: AUC &gt; 0.72 · KS &gt; 35%</text>
+        <text x="685" y="484" font-family="Space Mono,monospace" font-size="8.5" fill="#888" text-anchor="middle">for thin-file consumer portfolio</text>
+      </svg>
+    </div>
+    <figcaption><em>Fig. 1 — Left panel: Credit approval ladder. Each scoreband maps to an institution action, an estimated default rate range, and a collections posture. The band boundaries (400/600/750) are illustrative; in production they are calibrated against actual default rates in each band and adjusted as the portfolio evolves. Right panel (1B): AUC and KS decoder. The ROC curve shows rank-ordering quality; the KS statistic shows the maximum separation between defaulter and non-defaulter score distributions, which locates the optimal policy threshold.</em></figcaption>
+  </figure>
+
+  <h2><span class="tab-num">§ 04</span>Scoreband Construction</h2>
+
+  <p>A model that outputs a probability of default is not yet an approval policy. The conversion from probability to policy requires score transformation and band definition — a step that involves explicit choices about risk tolerance that the data alone cannot make.</p>
+
+  <h3>From Probability to Score</h3>
+  <p>The raw model output is a probability between 0 and 1, where higher probability = higher estimated default risk. For policy purposes, it is conventional to invert and rescale this to a score where higher = less risky, which aligns with the credit bureau convention that higher scores mean better creditworthiness. A common transformation scales the log-odds of non-default to a 300-900 integer range:</p>
+
+<pre><code class="language-python">import numpy as np
+
+def prob_to_score(p_default, base_score=600, pdo=50, base_odds=1.0):
+    """
+    Convert default probability to a scorecard-style integer score.
+    pdo: Points to Double Odds — score increment that halves default risk.
+    base_score: score at which odds = base_odds (e.g., 1:1 odds = 600)
+    """
+    # Avoid log(0) — clip extreme probabilities
+    p_default = np.clip(p_default, 1e-6, 1 - 1e-6)
+    odds_good = (1 - p_default) / p_default       # odds of non-default
+    log_odds   = np.log(odds_good)
+    factor     = pdo / np.log(2)                  # score per log-odds unit
+    score = base_score + factor * (log_odds - np.log(base_odds))
+    return np.round(score).astype(int)</code></pre>
+
+  <h3>Band Cutoffs: Not a Statistical Question</h3>
+  <p>The cutoffs that separate Band A from Band B from Band C from Band D are not discovered by the model. They are set by the credit policy team based on three inputs: the estimated default rate in each score range (derived from the validation set), the lender's current target portfolio default rate (a function of capital adequacy and risk appetite), and the expected volume at each band (how many applications fall in each zone at the proposed cutoffs).</p>
+
+  <p>A lender that has been running above its target NPA ratio will set stricter cutoffs, declining more applications and accepting lower origination volume in exchange for better portfolio quality. A lender that is growing aggressively may set more permissive cutoffs, accepting more Band C applications into the review queue to maintain volume. The model doesn't make this call; the model gives the credit policy team the empirical basis to make it.</p>
+
+  <figure>
+    <table class="score-table">
+      <thead>
+        <tr>
+          <th>Band</th>
+          <th>Score Range</th>
+          <th>Est. Default Rate</th>
+          <th>Policy Action</th>
+          <th>Collections Posture</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="band">A</td>
+          <td>&gt; 750</td>
+          <td>&lt; 2%</td>
+          <td class="action-approve">Approve — full amount, standard rate</td>
+          <td>Standard 30/60/90 DPD reminder cycle</td>
+        </tr>
+        <tr>
+          <td class="band">B</td>
+          <td>600–750</td>
+          <td>4–8%</td>
+          <td class="action-review">Reprice — +150 to 300 bps; reduced max loan</td>
+          <td>Early flag at 30 DPD; proactive call at risk signal</td>
+        </tr>
+        <tr>
+          <td class="band">C</td>
+          <td>400–600</td>
+          <td>12–20%</td>
+          <td class="action-review">Manual review — income verification, additional docs</td>
+          <td>Pre-emptive outreach; enhanced monitoring from day 1</td>
+        </tr>
+        <tr>
+          <td class="band">D</td>
+          <td>&lt; 400</td>
+          <td>&gt; 25%</td>
+          <td class="action-reject">Decline — policy reason code; suggest reapply after 6 months</td>
+          <td>Not applicable — application not funded</td>
+        </tr>
+      </tbody>
+    </table>
+    <figcaption><em>Fig. 2 — Scoreband policy table. The band boundaries and default rate estimates are calibrated targets; in production, they are updated quarterly as actual default experience accumulates. The collections posture column connects the model's risk output to the downstream operations that determine actual loss recovery.</em></figcaption>
+  </figure>
+
+  <h2><span class="tab-num">§ 05</span>Handling Class Imbalance: The 8.1% Problem</h2>
+
+  <p>With only 8.1 percent of applications being actual defaulters, a model that predicts "no default" for every application achieves 91.9 percent accuracy while being useless for the purpose it was built for. Accuracy is the wrong optimization target for this problem; discrimination is what matters.</p>
+
+  <p>Three strategies handle the imbalance in practice:</p>
+
+  <ul>
+    <li><strong>Class weights.</strong> Penalize the model more for missing a default than for a false alarm. Scikit-learn's classifiers accept a <code>class_weight</code> parameter; setting it proportionally to the inverse of class frequency (approximately 1:11 here) forces the model to work harder to correctly rank defaulters. This preserves all training data and is the most common approach.</li>
+    <li><strong>SMOTE (Synthetic Minority Oversampling).</strong> Generate synthetic defaulter observations by interpolating between existing defaulters in feature space. This can help tree-based models learn better decision boundaries in sparse default zones, but it can also introduce noise if defaulter feature space has complex boundaries. Use only in training; never on validation or test sets.</li>
+    <li><strong>Threshold tuning post-training.</strong> Train on the imbalanced data but adjust the classification threshold (default 0.5) downward so more applicants are flagged as risky. This shifts the precision-recall tradeoff: the lender catches more defaulters but also declines more good applicants. Where on the precision-recall curve the lender should operate is — again — a business decision, not a model decision.</li>
+  </ul>
+
+  <h2><span class="tab-num">§ 06</span>Connecting Output to Approval and Monitoring Policy</h2>
+
+  <p>The credit model's output is only valuable if it is embedded in a decision workflow that uses it consistently, updates it regularly, and monitors its performance against actual outcomes.</p>
+
+  <h3>Approval Policy</h3>
+  <p>The approval ladder in Fig. 1 shows the intended routing. In a production system, this means that every application flows through a scoring API before reaching an underwriter. Band A and Band B decisions are automated; Band C applications route to a human underwriter with the score, the key driver features, and the relevant policy thresholds visible in the underwriting interface. Band D applications receive an automated decline with a reason code — not "your score was low" but a specific reason code mapped to the highest-weight negative features (e.g., "insufficient employment stability," "debt-to-income ratio exceeds threshold"), which is required for regulatory compliance in most jurisdictions.</p>
+
+  <h3>Monitoring Policy</h3>
+  <p>A credit model's performance degrades over time as the population shifts — new customer segments enter, economic conditions change, the lender's own marketing changes who applies. The standard monitoring framework tracks three things: (1) the score distribution of new applications versus the training cohort (a Population Stability Index above 0.25 is a signal to retrain); (2) the actual default rate in each band against the expected default rate (a divergence of more than 30 percent relative is a red flag); and (3) feature drift in the top-10 predictive features (any feature whose distribution has shifted significantly is a candidate for investigation or model update).</p>
+
+  <p>Model retraining is not a one-time event. For a lender processing thousands of applications per month, a model trained on historical data from more than 12-18 months ago is likely degraded to some degree. The pipeline to retrain on fresh labeled data (where "labeled" means applications old enough that their repayment outcome is known) needs to exist as a production process, not as a one-off notebook run.</p>
+
+  <h2><span class="tab-num">§ 07</span>What the Model Cannot Do</h2>
+
+  <p>The model predicts default probability based on application-time features. It does not see everything that matters.</p>
+
+  <p><strong>It does not see job loss after approval.</strong> An applicant who scores Band A in January and loses their job in March is now a default risk regardless of their application-time score. Income protection products, disbursement-time employment verification, and post-disbursement monitoring (looking for early payment behavior signals) handle the gap the application-time model cannot see.</p>
+
+  <p><strong>It does not see fraud.</strong> A well-constructed synthetic identity (a "sleeper" application built with a clean fabricated credit profile) will score favorably and default by design. Fraud detection requires a separate system — behavioral biometrics, device fingerprinting, anomaly detection on application patterns — that runs in parallel to the credit model, not as a component of it.</p>
+
+  <p><strong>It does not adjudicate fairness.</strong> A model trained on historical approval data inherits the biases embedded in that history. If the lender historically approved women at lower rates than men with similar profiles, the model will learn to score women lower, amplifying the original bias. Fair lending compliance requires disparate impact testing across protected characteristics, with remediation through constrained optimization or post-processing adjustments if disparate impact is detected. This is not optional for regulated lenders — it is a legal obligation.</p>
+
+  <p>A credit scoring model is a disciplined way of ranking applicants by estimated default risk. It is subordinate to the lending policy, not a replacement for it. The policy decisions — who to approve, at what rate, with what collections response — are institutional choices that the model informs but never makes autonomously. The value of the model lies in making those policy choices more consistent and more empirically grounded than individual underwriter judgment can reliably be at scale.</p>
+
+  <div class="end-rule">
+    <p>DATA: Home Credit Group application_data.csv (307,511 rows, 122 features) + previous_application.csv (1.67M rows). TARGET: TARGET column = 1 if client had payment difficulties (default), 0 otherwise. DEFAULT RATE: ~8.1%. METHODS: EDA, missing-value treatment, feature engineering from previous applications table, logistic regression baseline, gradient boosting (XGBoost/LightGBM), class-weight adjustment for imbalance. EVALUATION: AUC-ROC, KS statistic, Population Stability Index. This analysis is an educational exercise based on a public competition dataset and does not represent commercial lending policy for any institution.</p>
+  </div>
+
+</div>
+</body>
+</html>

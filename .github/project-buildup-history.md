@@ -1,0 +1,10 @@
+# Project Buildup History: Loan Default Risk Prediction
+
+- Repository: `loan-default-risk-prediction`
+- Category: `data_science`
+- Subtype: `prediction`
+- Source: `project_buildup_2021_2025_daily_plan_extra.csv`
+## 2021-09-06 - Day 3: Data cleaning pass
+
+- Task summary: Returned to Loan Default Risk Prediction after a couple weeks away. The dataset had some columns with very high missing rates that I had flagged earlier but not acted on. Today decided which to impute and which to drop — anything above 40 percent missing was dropped, the rest got median or mode fill depending on type. Also found that one of the binary target columns had a few rows encoded as strings instead of integers which was silently coercing the whole column to object dtype. Fixed that and reran the dtype checks.
+- Deliverable: Missing value strategy applied, dtype issue in target column resolved.
