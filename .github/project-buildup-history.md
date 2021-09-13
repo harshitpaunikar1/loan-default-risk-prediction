@@ -16,3 +16,7 @@
 
 - Task summary: Follow-up in the afternoon: the correlation heatmap was not rendering properly for the full feature set because too many columns were still in string format. Fixed the type casting block and regenerated it.
 - Deliverable: Heatmap rendering properly. No major surprises in the correlation structure.
+## 2021-09-13 - Day 4: EDA and correlation pass
+
+- Task summary: Late session: added a class balance check for the target variable. About 20 percent default rate which is workable without aggressive resampling. Noted it in the project doc.
+- Deliverable: Class distribution documented. Mild imbalance, manageable.
