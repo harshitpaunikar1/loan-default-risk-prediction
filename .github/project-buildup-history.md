@@ -12,3 +12,7 @@
 
 - Task summary: Deep EDA session on the loan dataset today. Went through each feature group systematically — loan amount distribution, term breakdown, employment length spread, and home ownership categories. The most interesting finding was that annual income had a huge number of outliers that were making the histograms unreadable. Capped at the 99th percentile for visualization purposes and noted it for the feature prep stage. Also looked at default rate by loan grade which showed a very clean monotonic relationship — that feature is probably going to be one of the most predictive.
 - Deliverable: EDA complete with annotations. Loan grade likely top predictor.
+## 2021-09-13 - Day 4: EDA and correlation pass
+
+- Task summary: Follow-up in the afternoon: the correlation heatmap was not rendering properly for the full feature set because too many columns were still in string format. Fixed the type casting block and regenerated it.
+- Deliverable: Heatmap rendering properly. No major surprises in the correlation structure.
