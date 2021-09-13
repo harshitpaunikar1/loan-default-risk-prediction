@@ -8,3 +8,7 @@
 
 - Task summary: Returned to Loan Default Risk Prediction after a couple weeks away. The dataset had some columns with very high missing rates that I had flagged earlier but not acted on. Today decided which to impute and which to drop — anything above 40 percent missing was dropped, the rest got median or mode fill depending on type. Also found that one of the binary target columns had a few rows encoded as strings instead of integers which was silently coercing the whole column to object dtype. Fixed that and reran the dtype checks.
 - Deliverable: Missing value strategy applied, dtype issue in target column resolved.
+## 2021-09-13 - Day 4: EDA and correlation pass
+
+- Task summary: Deep EDA session on the loan dataset today. Went through each feature group systematically — loan amount distribution, term breakdown, employment length spread, and home ownership categories. The most interesting finding was that annual income had a huge number of outliers that were making the histograms unreadable. Capped at the 99th percentile for visualization purposes and noted it for the feature prep stage. Also looked at default rate by loan grade which showed a very clean monotonic relationship — that feature is probably going to be one of the most predictive.
+- Deliverable: EDA complete with annotations. Loan grade likely top predictor.
