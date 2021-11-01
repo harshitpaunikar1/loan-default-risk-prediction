@@ -20,3 +20,7 @@
 
 - Task summary: Late session: added a class balance check for the target variable. About 20 percent default rate which is workable without aggressive resampling. Noted it in the project doc.
 - Deliverable: Class distribution documented. Mild imbalance, manageable.
+## 2021-11-01 - Day 5: Feature engineering
+
+- Task summary: Back to the loan default project for a feature engineering session. The raw dataset has a date column for loan issuance that had not been used at all yet. Extracted year, month, and a quarter indicator, then also computed how many months ago the loan was issued relative to the dataset snapshot date. That temporal distance feature turned out to correlate decently with default probability, which makes sense since recent loans have less repayment history. Also looked at interaction between loan amount and annual income as a debt-to-income proxy.
+- Deliverable: Temporal features added. DTI proxy computed. Feature set expanded from 14 to 18.
