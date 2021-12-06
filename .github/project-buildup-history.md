@@ -28,3 +28,7 @@
 
 - Task summary: Trained the first proper model on the loan default dataset today. Started with logistic regression as the baseline and got a reasonable AUC. The recall on the default class was still low so tried increasing the class weight parameter. Also ran a quick Random Forest to see how far the tree-based approach could push the AUC without much tuning. The gap between the two was meaningful — about 0.07 AUC — which justified moving to the tree-based approach for the main model.
 - Deliverable: Random Forest meaningfully outperforms logistic baseline. Continuing with RF as primary model.
+## 2021-12-06 - Day 6: Model training
+
+- Task summary: Late session: the Random Forest was slow to train on the full feature set. Profiled and found three features with near-zero variance that were adding noise and compute time. Dropped them and retrained.
+- Deliverable: Three low-variance features removed. Training time reduced by ~40 percent.
