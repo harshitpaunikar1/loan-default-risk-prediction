@@ -24,3 +24,7 @@
 
 - Task summary: Back to the loan default project for a feature engineering session. The raw dataset has a date column for loan issuance that had not been used at all yet. Extracted year, month, and a quarter indicator, then also computed how many months ago the loan was issued relative to the dataset snapshot date. That temporal distance feature turned out to correlate decently with default probability, which makes sense since recent loans have less repayment history. Also looked at interaction between loan amount and annual income as a debt-to-income proxy.
 - Deliverable: Temporal features added. DTI proxy computed. Feature set expanded from 14 to 18.
+## 2021-12-06 - Day 6: Model training
+
+- Task summary: Trained the first proper model on the loan default dataset today. Started with logistic regression as the baseline and got a reasonable AUC. The recall on the default class was still low so tried increasing the class weight parameter. Also ran a quick Random Forest to see how far the tree-based approach could push the AUC without much tuning. The gap between the two was meaningful — about 0.07 AUC — which justified moving to the tree-based approach for the main model.
+- Deliverable: Random Forest meaningfully outperforms logistic baseline. Continuing with RF as primary model.
