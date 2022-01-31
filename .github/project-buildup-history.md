@@ -36,3 +36,7 @@
 
 - Task summary: Closer to the end, I was mostly tightening things up instead of inventing new scope. The job for the day was to inspect metrics and error cases so the result is believable so the final result looked a bit more complete. Toward the end I mostly kept trimming weird bits, fixing wording, and tying the loose parts together. Most of the progress here came from patient cleanup more than anything flashy.
 - Deliverable: Ended the day with evaluation notes in hand, plus a few side notes on what still needed fixing later. There were still a couple of loose parts, but nothing serious enough to block the next step.
+## 2022-01-31 - Day 9: Storytelling check
+
+- Task summary: Closer to the end, I was mostly tightening things up instead of inventing new scope. The job for the day was to translate the result into plain language for a non-technical reader so the final result looked a bit more complete. I was not trying to add anything fancy here, just making sure the thing looked complete enough to show someone. A lot of this also meant checking if the numbers were making sense and not just trusting the first result that showed up.
+- Deliverable: Ended the day with business takeaway in hand, plus a few side notes on what still needed fixing later. It was not super polished, just stable enough that I felt okay moving forward.
