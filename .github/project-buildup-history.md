@@ -40,3 +40,7 @@
 
 - Task summary: Closer to the end, I was mostly tightening things up instead of inventing new scope. The job for the day was to translate the result into plain language for a non-technical reader so the final result looked a bit more complete. I was not trying to add anything fancy here, just making sure the thing looked complete enough to show someone. A lot of this also meant checking if the numbers were making sense and not just trusting the first result that showed up.
 - Deliverable: Ended the day with business takeaway in hand, plus a few side notes on what still needed fixing later. It was not super polished, just stable enough that I felt okay moving forward.
+## 2022-02-01 - Day 10: Documentation wrap
+
+- Task summary: Used the last day on Loan Default Risk Prediction to slow down and finish the loose ends. I mainly had to clean the notebook and write a short README and make sure the project told a clean story from start to finish. Most of the heavy lifting was already done, so this part was more about making the rough edges less obvious. I kept bouncing between the notebook, small observations, and quick plots until the direction felt usable.
+- Deliverable: Finished with project documentation looking decent enough to call this version done, even if I could still nitpick a few things. I also left myself a few rough reminders for the next day so I would not have to rediscover the same context again.
